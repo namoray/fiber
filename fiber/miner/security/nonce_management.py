@@ -1,12 +1,14 @@
 import time
 from fiber.miner.core import miner_constants as mcst
+from fiber.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class NonceManager:
     def __init__(self) -> None:
         self._nonces: dict[str, float] = {}
         self.TTL: int = 60 * 2
-        self.nonce_window_ns = mcst.NONCE_WINDOW_NS
 
     def add_nonce(self, nonce: str) -> None:
         self._nonces[nonce] = time.time() + self.TTL
@@ -14,22 +16,33 @@ class NonceManager:
     def nonce_is_valid(self, nonce: str) -> bool:
         # Check for collision
         if nonce in self._nonces:
+            logger.debug(f"Invalid nonce because it's a collision: {nonce}")
             return False
 
-        self.add_nonce(nonce)
 
+        # If nonce isn't the right format, don't add it to self._nonces to prevent abuse
         # Check for recency
         current_time_ns = time.time_ns()
+        logger.debug(f"Current time: {current_time_ns}")
         try:
             timestamp_ns = int(nonce.split("_")[0])
+            if timestamp_ns > 10**20:
+                raise ValueError()
         except (ValueError, IndexError):
+            logger.debug(f"Invalid nonce because it's not in the right format. Nonce: {nonce}")
             return False
 
-        if current_time_ns - timestamp_ns > self.nonce_window_ns:
+
+        # Nonces, can only be used once.
+        self.add_nonce(nonce)
+
+        if current_time_ns - timestamp_ns > mcst.NONCE_WINDOW_NS:
+            logger.debug(f"Invalid nonce because it's too old: {nonce}")
             return False  # What an Old Nonce
 
-        if timestamp_ns - current_time_ns > 30_000_000_000:
-            return False  # That nonce is too new, and will be suspectible to replay attacks
+        if timestamp_ns - current_time_ns > mcst.NONCE_WINDOW_NS:
+            logger.debug(f"Invalid nonce because it's from the distant future: {nonce}")
+            return False  # That nonce is from the distant future, and will be suspectible to replay attacks
 
         return True
 
