@@ -13,4 +13,4 @@ class Config:
     metagraph: Metagraph
     min_stake_threshold: float
     httpx_client: httpx.AsyncClient
-    aiohttp_session: aiohttp.ClientSession
+    aiohttp_client: aiohttp.ClientSession

@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 import httpx
+import aiohttp
 
 from fiber.chain_interactions.metagraph import Metagraph
 from fiber.miner.security import nonce_management
@@ -74,4 +75,5 @@ def factory_config() -> Config:
         metagraph=metagraph,
         min_stake_threshold=min_stake_threshold,
         httpx_client=httpx.AsyncClient(),
+        aiohttp_client=aiohttp.ClientSession(),
     )
