@@ -17,6 +17,8 @@ from fiber.chain_interactions import chain_utils
 from fiber.chain_interactions import interface
 from pydantic import BaseModel
 
+from fiber.security.tickets.manager import TicketManager
+
 T = TypeVar("T", bound=BaseModel)
 
 load_dotenv()
@@ -36,6 +38,7 @@ def _derive_key_from_string(input_string: str, salt: bytes = b"salt_") -> str:
 @lru_cache
 def factory_config() -> Config:
     nonce_manager = nonce_management.NonceManager()
+    ticket_manager = TicketManager()
 
     wallet_name = os.getenv("WALLET_NAME", "default")
     hotkey_name = os.getenv("HOTKEY_NAME", "default")
@@ -69,6 +72,7 @@ def factory_config() -> Config:
     )
 
     return Config(
+        ticket_manager=ticket_manager,
         encryption_keys_handler=encryption_keys_handler,
         keypair=keypair,
         metagraph=metagraph,
