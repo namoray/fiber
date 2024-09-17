@@ -3,6 +3,7 @@ from fiber.chain_interactions.metagraph import Metagraph
 from fiber.miner.security import key_management
 from substrateinterface import Keypair
 import httpx
+import aiohttp
 
 
 @dataclass
@@ -12,3 +13,4 @@ class Config:
     metagraph: Metagraph
     min_stake_threshold: float
     httpx_client: httpx.AsyncClient
+    aiohttp_session: aiohttp.ClientSession
