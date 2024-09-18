@@ -9,9 +9,7 @@ description = "The ultra lightweight network for miner-validator communication"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-authors = [
-    { name = "namoray", email = "nuevaamor@proton.me" },
-]
+authors = [{ name = "namoray", email = "nuevaamor@proton.me" }]
 dependencies = [
     "substrate-interface==1.7.10",
     "tenacity==9.0.0",
@@ -22,7 +20,8 @@ dependencies = [
     "cryptography==43.0.0",
     "python-dotenv==1.0.1",
     "httpx==0.27.0",
-    "aiohttp==3.*"
+    "aiohttp==3.*",
+    "ujson==5.*",
 ]
 
 [project.scripts]
@@ -32,14 +31,10 @@ fiber-post-ip = "fiber.scripts.post_ip_to_chain:main"
 packages = ["fiber"]
 
 [tool.hatch.build]
-include = [
-    "fiber/**/*.py",
-]
+include = ["fiber/**/*.py"]
 
 [tool.hatch.build.targets.sdist]
-include = [
-    "/fiber",
-]
+include = ["/fiber"]
 
 [tool.pyright]
 include = ["fiber"]
@@ -49,7 +44,6 @@ reportMissingTypeStubs = false
 pythonVersion = "3.10"
 pythonPlatform = "Linux"
 reportMissingModuleSource = false
-
 
 
 [tool.ruff]
