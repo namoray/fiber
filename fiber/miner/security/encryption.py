@@ -1,17 +1,16 @@
-import json
-from fastapi import Depends, HTTPException, Request
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding
-from fastapi import Header
-from typing import Type, TypeVar
-from cryptography.hazmat.primitives.asymmetric import rsa
-from pydantic import BaseModel
-from fiber.miner.dependencies import get_config
-from fiber.miner.core.models.encryption import SymmetricKeyExchange
-from fiber.miner.core.models.config import Config
-from fiber.logging_utils import get_logger
 import base64
+import json
+from typing import Type, TypeVar
 
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from fastapi import Depends, Header, HTTPException, Request
+from pydantic import BaseModel
+
+from fiber.logging_utils import get_logger
+from fiber.miner.core.models.config import Config
+from fiber.miner.core.models.encryption import SymmetricKeyExchange
+from fiber.miner.dependencies import get_config
 
 logger = get_logger(__name__)
 
@@ -57,6 +56,7 @@ async def decrypt_symmetric_key_exchange_payload(
 
 def decrypt_general_payload(
     model: Type[T],
+    check_nonce: bool = True,
     encrypted_payload: bytes = Depends(get_body),
     symmetric_key_uuid: str = Header(...),
     hotkey_ss58_address: str = Header(...),
@@ -68,5 +68,12 @@ def decrypt_general_payload(
 
     decrypted_data = symmetric_key_info.fernet.decrypt(encrypted_payload)
 
-    data_dict = json.loads(decrypted_data.decode())
+    data_dict: dict = json.loads(decrypted_data.decode())
+    if check_nonce:
+        nonce: str = data_dict.get("nonce", "")
+        if config.encryption_keys_handler.nonce_manager.nonce_is_valid(nonce):
+            raise HTTPException(
+                status_code=401,
+                detail="Oi, I've seen that nonce before. Don't send me the nonce more than once",
+            )
     return model(**data_dict)

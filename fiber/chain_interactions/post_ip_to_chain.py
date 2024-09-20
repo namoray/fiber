@@ -1,6 +1,7 @@
-from substrateinterface import SubstrateInterface, Keypair
-from tenacity import retry, stop_after_attempt, wait_exponential
 import netaddr
+from substrateinterface import Keypair, SubstrateInterface
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 from fiber.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -41,13 +42,14 @@ def post_node_ip_to_chain(
 
     logger.info(f"Posting IP to chain. Params: {params}")
 
-    call = substrate_interface.compose_call("SubtensorModule", "serve_axon", params)
-    extrinsic = substrate_interface.create_signed_extrinsic(call=call, keypair=keypair)
-    response = substrate_interface.submit_extrinsic(extrinsic, wait_for_inclusion, wait_for_finalization)
+    with substrate_interface as si:
+        call = si.compose_call("SubtensorModule", "serve_axon", params)
+        extrinsic = si.create_signed_extrinsic(call=call, keypair=keypair)
+        response = si.submit_extrinsic(extrinsic, wait_for_inclusion, wait_for_finalization)
 
-    if wait_for_inclusion or wait_for_finalization:
-        response.process_events()
-        if not response.is_success:
-            logger.error(f"Failed: {response.error_message}")
-        return response.is_success
+        if wait_for_inclusion or wait_for_finalization:
+            response.process_events()
+            if not response.is_success:
+                logger.error(f"Failed: {response.error_message}")
+            return response.is_success
     return True
