@@ -1,26 +1,14 @@
 import json
 from typing import Any
-
 import httpx
-from fiber import constants as bcst
-from cryptography.fernet import Fernet
 from fiber.chain_interactions.models import Node
 from fiber.logging_utils import get_logger
-from fiber import constants as cst
 from typing import AsyncGenerator
 
-from fiber.validator.generate_nonce import generate_nonce
+from fiber.security.tickets.operations import create_basic_ticket, ticket_to_headers
+from fiber.security.tickets.models import TicketState
 
 logger = get_logger(__name__)
-
-
-def _get_headers(symmetric_key_uuid: str, validator_ss58_address: str) -> dict[str, str]:
-    return {
-        "Content-Type": "application/octet-stream",  # NOTE: Good?
-        bcst.SYMMETRIC_KEY_UUID: symmetric_key_uuid,
-        bcst.SS58_ADDRESS: validator_ss58_address,
-    }
-
 
 def construct_server_address(
     node: Node,
@@ -43,12 +31,16 @@ def construct_server_address(
 async def make_non_streamed_get(
     httpx_client: httpx.AsyncClient,
     server_address: str,
-    validator_ss58_address: str,
-    symmetric_key_uuid: str,
     endpoint: str,
+    state: TicketState,
+    headers: dict[str, Any] = {},
     timeout: float = 10,
 ):
-    headers = _get_headers(symmetric_key_uuid, validator_ss58_address)
+    # Create new ticket
+    ticket = create_basic_ticket(state) # TODO: you could also make an advanced ticket
+
+    # Convert ticket to headers
+    headers = ticket_to_headers(ticket, headers)
     logger.debug(f"headers: {headers}")
     response = await httpx_client.get(
         timeout=timeout,
@@ -61,19 +53,21 @@ async def make_non_streamed_get(
 async def make_non_streamed_post(
     httpx_client: httpx.AsyncClient,
     server_address: str,
-    validator_ss58_address: str,
-    fernet: Fernet,
-    symmetric_key_uuid: str,
     endpoint: str,
     payload: dict[str, Any],
+    state: TicketState,
+    headers: dict[str, Any] = {},
     timeout: float = 10,
 ) -> httpx.Response:
-    headers = _get_headers(symmetric_key_uuid, validator_ss58_address)
+    # Create new ticket
+    ticket = create_basic_ticket(state) # TODO: you could also make an advanced ticket
 
-    payload[cst.NONCE] = generate_nonce()
-    encrypted_payload = fernet.encrypt(json.dumps(payload).encode())
+    # Convert ticket to headers
+    headers = ticket_to_headers(ticket, headers)
+
+    # Send request    
     response = await httpx_client.post(
-        content=encrypted_payload,   # NOTE: can this be content?
+        content=json.dumps(payload).encode(),
         timeout=timeout,
         headers=headers,
         url=server_address + endpoint,
@@ -84,22 +78,23 @@ async def make_non_streamed_post(
 async def make_streamed_post(
     httpx_client: httpx.AsyncClient,
     server_address: str,
-    validator_ss58_address: str,
-    fernet: Fernet,
-    symmetric_key_uuid: str,
     endpoint: str,
     payload: dict[str, Any],
+    state: TicketState,
+    headers: dict[str, Any] = {},
     timeout: float = 10,
 ) -> AsyncGenerator[bytes, None]:
-    headers = _get_headers(symmetric_key_uuid, validator_ss58_address)
+    # Create new ticket
+    ticket = create_basic_ticket(state) # TODO: you could also make an advanced ticket
 
-    payload[cst.NONCE] = generate_nonce()
-    encrypted_payload = fernet.encrypt(json.dumps(payload).encode())
+    # Convert ticket to headers
+    headers = ticket_to_headers(ticket, headers)
 
+    # Create generator
     async with httpx_client.stream(
         method="POST",
         url=server_address + endpoint,
-        content=encrypted_payload,  # NOTE: can this be content?
+        content=json.dumps(payload).encode(),
         headers=headers,
         timeout=timeout,
     ) as response:

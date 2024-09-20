@@ -7,7 +7,7 @@ PLEASE IMPLEMENT YOUR OWN :)
 from functools import partial
 from fastapi import Depends
 from pydantic import BaseModel
-from fiber.miner.dependencies import blacklist_low_stake, verify_nonce
+from fiber.miner.dependencies import blacklist_low_stake, verify_nonce, verify_ticket
 from fiber.miner.security.encryption import decrypt_general_payload
 from fastapi.routing import APIRouter
 
@@ -31,8 +31,8 @@ def factory_router() -> APIRouter:
         example_subnet_request,
         tags=["Example"],
         dependencies=[
+            Depends(verify_ticket),
             Depends(blacklist_low_stake),
-            Depends(verify_nonce),
         ],
         methods=["POST"],
     )

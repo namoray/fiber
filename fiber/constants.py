@@ -1,8 +1,14 @@
 EXCHANGE_SYMMETRIC_KEY_ENDPOINT = "exchange-symmetric-key"
 PUBLIC_ENCRYPTION_KEY_ENDPOINT = "public-encryption-key"
+
 SYMMETRIC_KEY_UUID = "symmetric-key-uuid"
 SS58_ADDRESS = "hotkey-ss58-address"
 NEURON_INFO_LITE = "NeuronInfoLite"
+
+# Used in HMAC tickets
+HMAC_TICKET_SIGNATURE = "fiber-hmac-ticket-signature"
+HMAC_TICKET_UUID = "fiber-hmac-ticket-uuid"
+HMAC_TICKET_SEQUENCE = "fiber-hmac-ticket-sequence"
 
 FINNEY_NETWORK = "finney"
 FINNEY_TEST_NETWORK = "test"

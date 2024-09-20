@@ -3,6 +3,7 @@ from fiber.miner.core.models.config import Config
 from fastapi import Depends, Request, HTTPException
 from fiber.logging_utils import get_logger
 from fiber.miner.security import signatures
+from fiber.security.tickets.operations import headers_to_ticket
 
 
 logger = get_logger(__name__)
@@ -59,3 +60,9 @@ async def verify_nonce(request: Request, config: Config = Depends(get_config)):
 
     if not config.encryption_keys_handler.nonce_manager.nonce_is_valid(nonce):
         raise HTTPException(status_code=401, detail="Oi, invalid nonce!!")
+
+
+async def verify_ticket(request: Request, config: Config = Depends(get_config)):
+    ticket = headers_to_ticket(dict(request.headers))
+    if not config.ticket_manager.verify_ticket(ticket):
+        raise HTTPException(status_code=401, detail="Oi, invalid ticket!!")
