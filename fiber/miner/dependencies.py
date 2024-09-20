@@ -39,13 +39,16 @@ async def blacklist_low_stake(request: Request, config: Config = Depends(get_con
 
     hotkey = request.headers.get("hotkey")
     if not hotkey:
+        logger.debug(f"Hotkey header missing {hotkey}")
         raise HTTPException(status_code=400, detail="Hotkey header missing")
 
     node = metagraph.nodes.get(hotkey)
     if not node:
+        logger.debug("Hotkey not found in metagraph ")
         raise HTTPException(status_code=403, detail="Hotkey not found in metagraph")
 
     if node.stake <= config.min_stake_threshold:
+        logger.debug(f"Insufficient stake for hotkey: {hotkey}")
         raise HTTPException(status_code=403, detail="Insufficient stake")
 
 
